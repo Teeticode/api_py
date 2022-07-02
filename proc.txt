@@ -1,0 +1,3 @@
+install python version > 3.6
+set up virtual environment -> py -3 -m venv <name>
+install fastapi -> pip install fastapi[all]
