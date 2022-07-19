@@ -1,7 +1,8 @@
-from enum import unique
+
 from xmlrpc.client import Boolean
-from sqlalchemy import TIMESTAMP, BigInteger, Column, Integer, String, Boolean, text
+from sqlalchemy import TIMESTAMP, BigInteger, Column, ForeignKey, Integer, String, Boolean, text
 from .database import Base
+from sqlalchemy.orm import relationship
 
 class Post(Base):
     __tablename__ = "posts"
@@ -14,6 +15,9 @@ class Post(Base):
     created_at = Column(TIMESTAMP(timezone=True), 
     nullable=False, server_default=text('NOW()'))
     postid = Column(BigInteger, nullable=False, unique=True)
+    userid =  Column(BigInteger, 
+    ForeignKey("users.userid", ondelete="CASCADE"), nullable=False)
+    owner = relationship("User")
 
 class User(Base):
     __tablename__ = 'users'
@@ -24,3 +28,8 @@ class User(Base):
     userid = Column(BigInteger, nullable=False, unique=True)
     created_at = Column(TIMESTAMP(timezone=True), 
                 nullable=False, server_default=text('NOW()'))
+
+class Vote(Base):
+    __tablename__ = 'votes'
+    userid = Column(BigInteger, ForeignKey('users.userid', ondelete="CASCADE"), primary_key=True)
+    postid = Column(BigInteger, ForeignKey('posts.postid', ondelete="CASCADE"), primary_key=True)

@@ -1,3 +1,17 @@
 install python version > 3.6
 set up virtual environment -> py -3 -m venv <name>
 install fastapi -> pip install fastapi[all]
+
+// run raw sql instead of sql alchemy to connect to database
+
+while True:
+    try: 
+        conn = psycopg2.connect(host='localhost',database='portfolio', user='postgres',
+        password='dennis', cursor_factory=RealDictCursor)
+        cursor = conn.cursor()
+        print("Database connection was successfull")
+        break
+    except Exception as error:
+        print("Connecting to a database was not successfull")
+        print("Error: ", error)
+        time.sleep(2)
