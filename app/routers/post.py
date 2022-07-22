@@ -6,13 +6,13 @@ from fastapi import ( APIRouter,
  HTTPException, Response, status, Depends)
 from random import randrange
 from typing import List, Optional
-
+from sqlalchemy import func
 router = APIRouter(
     prefix="/posts",
     tags=['Posts']
 )
-#get all data from our model Posts
-@router.get("/", response_model=List[schemas.Post])
+#get all data from our model Posts 
+@router.get("/" , response_model=List[schemas.PostOut])
 def get_posts(
     db: Session = Depends(get_db),
     limit: int=10,
@@ -22,16 +22,20 @@ def get_posts(
     #posts = cursor.fetchall()
     #print(posts)
 
-    posts = db.query(models.Post).filter(models.Post.title.contains(search)).limit(limit).all()
+    #posts = db.query(models.Post).filter(models.Post.title.contains(search)).limit(limit).all()
 
-    return posts
+    result_query = db.query(models.Post, func.count(models.Vote.postid).label("votes")).join(models.Vote, models.Vote.postid == models.Post.postid , isouter=True).group_by(models.Post.id)
+    result = result_query.filter(models.Post.title.contains(search)).limit(limit).all()
+    return result
     
 # get all projects of collaborator 
-@router.get('/colab', response_model=List[schemas.Post])
+@router.get('/colab', response_model=List[schemas.PostOut])
 def get_colab_posts(db: Session = Depends(get_db),
                     curr_user: int=Depends(oauth2.get_current_user)):
-    posts = db.query(models.Post).filter(models.Post.userid == curr_user.userid).all()
-    return posts
+    #posts = db.query(models.Post).filter(models.Post.userid == curr_user.userid).all()
+    post_join_query = db.query(models.Post, func.count(models.Vote.postid).label("votes")).join(models.Vote, models.Vote.postid == models.Post.postid, isouter=True).group_by(models.Post.id)
+    post = post_join_query.filter(models.Post.userid == curr_user.userid).all()
+    return post
 #add data to our model
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.Post)
 def create_posts(
@@ -54,19 +58,22 @@ def create_posts(
 #title str, content str, category, category
 
 # get a specific post using the postid
-@router.get("/{postid}", response_model=schemas.Post)
+@router.get("/{postid}", response_model=schemas.PostOut)
 def get_post(
     postid: int, 
     db: Session = Depends(get_db),
     curr_user : int = Depends(oauth2.get_current_user)):
     #cursor.execute(""" SELECT * from posts WHERE postid = %s """, (str(id),))
     #post = cursor.fetchone()
-    post = db.query(models.Post).filter(models.Post.postid == postid).first()
+     
+    #post = db.query(models.Post).filter(models.Post.postid == postid).first()
+    post_join_query = db.query(models.Post, func.count(models.Vote.postid).label("votes")).join(models.Vote, models.Vote.postid == models.Post.postid, isouter=True).group_by(models.Post.id)
+    post = post_join_query.filter(models.Post.postid == postid).first()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail = f"post with id: {postid} was not found")
     
-    if post.userid != curr_user.userid:
+    if post.Post.userid != curr_user.userid:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="Could not get post")
     return post
