@@ -16,7 +16,7 @@ class Post(Base):
     nullable=False, server_default=text('NOW()'))
     postid = Column(BigInteger, nullable=False, unique=True)
     userid =  Column(BigInteger, 
-    ForeignKey("users.userid", ondelete="CASCADE"), nullable=False)
+            ForeignKey("users.userid", ondelete="CASCADE"), nullable=False)
     owner = relationship("User")
 
 class User(Base):
